@@ -27,7 +27,7 @@ namespace ReactLibrary.Controllers
             var identity = await GetIdentity(loginAndPassword[0], loginAndPassword[1]);
             if (identity == null)
             {
-                return BadRequest(new { errorText = "Invalid username or password." });
+                return BadRequest(new { errorText = "Invalid username or password" });
             }
 
             var encodedJwt = CreateToken(identity);
@@ -44,31 +44,35 @@ namespace ReactLibrary.Controllers
         [HttpPost("register")]
         public async Task<ActionResult> Register(string[] loginAndPassword)
         {
-            Person person = await db.Persons.FirstOrDefaultAsync(x => x.Login == loginAndPassword[0] && x.Password == loginAndPassword[1]);
-            if (person == null && loginAndPassword[0].Length > 2 && loginAndPassword[1].Length > 6)
+            Person person = await db.Persons.FirstOrDefaultAsync(x => x.Login == loginAndPassword[0]);
+            if(person == null)
+                return BadRequest(new { errorText = "User already exist" });
+
+            if (loginAndPassword[0].Length > 2)
+                return BadRequest(new { errorText = "Login must be more than two characters" });
+
+            if(loginAndPassword[1].Length > 6)
+                return BadRequest(new { errorText = "Password must be more than six characters" });
+
+            person = new Person
             {
-                person = new Person
-                {
-                    Login = loginAndPassword[0],
-                    Password = loginAndPassword[1]
-                };
-                db.Persons.Add(person);
-                await db.SaveChangesAsync();
+                Login = loginAndPassword[0],
+                Password = loginAndPassword[1]
+            };
+            db.Persons.Add(person);
+            await db.SaveChangesAsync();
 
-                ClaimsIdentity identity = await GetIdentity(loginAndPassword[0], loginAndPassword[1]);
+            ClaimsIdentity identity = await GetIdentity(loginAndPassword[0], loginAndPassword[1]);
 
-                var encodedJwt = CreateToken(identity);
+            var encodedJwt = CreateToken(identity);
 
-                var response = new
-                {
-                    access_token = encodedJwt,
-                    username = identity.Name
-                };
+            var response = new
+            {
+                access_token = encodedJwt,
+                username = identity.Name
+            };
 
-                return Ok(response);
-              
-            }
-            return BadRequest(new { errorText = "User already exist" });
+            return Ok(response);            
         }
 
         private async Task<ClaimsIdentity> GetIdentity(string username, string password)

@@ -14,11 +14,11 @@ export default class BookList extends React.Component {
         this.onRemoveBook = this.onRemoveBook.bind(this);
     }
     onChoose(e, id) {
-        this.state.Books[this.state.Books.findIndex(b => b.id == id)].choosed = e.target.checked;
+        this.state.Books[this.state.Books.findIndex(b => b.id == id)].choosed = e.currentTarget.checked;
         this.setState({ Books: this.state.Books });
     }
     onChooseAll(e) {
-        this.state.Books.forEach(b => b.choosed = e.target.checked);
+        this.state.Books.forEach(b => b.choosed = e.currentTarget.checked);
         this.setState({ Books: this.state.Books });
     }
     loadData() {
@@ -34,6 +34,7 @@ export default class BookList extends React.Component {
     }
     onAddBook(Book) {
         if (Book) {
+            console.log(typeof (Book.year));
             fetch(this.props.apiUrl, {
                 method: 'POST',
                 headers: {

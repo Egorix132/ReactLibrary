@@ -1,4 +1,8 @@
-﻿.edit-link {
+﻿button{
+    margin: 0.5em;
+}
+
+.edit-link {
     font-size: 12px;
     text-decoration: inherit;  
 }

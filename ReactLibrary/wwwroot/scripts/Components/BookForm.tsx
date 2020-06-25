@@ -9,12 +9,16 @@ export enum BookFormMode {
 
 interface BookFormProps {
     mode: BookFormMode;
-    onBookSubmit: (Book: Book) => void;
     initial?: Book;
+    onBookSubmit: (Book: Book) => void; 
     canselUpdate?: () => void;
 }
 
 export class BookForm extends React.Component<BookFormProps, Book> {
+    private name = React.createRef<HTMLInputElement>();
+    private year = React.createRef<HTMLInputElement>();
+    private genre = React.createRef<HTMLInputElement>();
+    private author = React.createRef<HTMLInputElement>();
 
     constructor(props) {
         super(props);
@@ -27,46 +31,38 @@ export class BookForm extends React.Component<BookFormProps, Book> {
         };
 
         this.onSubmit = this.onSubmit.bind(this);
-        this.onNameChange = this.onNameChange.bind(this);
-        this.onYearChange = this.onYearChange.bind(this);
-        this.onGenreChange = this.onGenreChange.bind(this);
-        this.onAuthorChange = this.onAuthorChange.bind(this);
     }
-    onNameChange(e) {
-        this.setState({ name: e.target.value });
-    }
-    onYearChange(e) {
-        this.setState({ year: e.target.value });
-    }
-    onGenreChange(e) {
-        this.setState({ genre: e.target.value });
-    }
-    onAuthorChange(e) {
-        this.setState({ author: e.target.value });
-    }
-    onSubmit(e) {
+
+    onSubmit(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
         e.preventDefault();
-        let bookId = this.state.id;
-        let bookName = this.state.name.trim();
-        let bookYear = this.state.year;
-        let bookGenre = this.state.genre;
-        let bookAuthor = this.state.author;
+
+        let bookName = this.name.current.value.trim();
+        let bookAuthor = this.name.current.value;
+
         if (!bookName || !bookAuthor) {
             return;
         }
-        this.props.onBookSubmit({ id: bookId, name: bookName, year: bookYear, genre: bookGenre, author: bookAuthor });
+
+        this.props.onBookSubmit({
+            id: this.state.id,
+            name: bookName,
+            year: this.year.current.valueAsNumber,
+            genre: this.genre.current.value,
+            author: bookAuthor
+        });
         if (this.props.mode == BookFormMode.Update)
             this.props.canselUpdate();
-        else
+        else {
             this.setState({ name: "", year: 0, genre: "", author: "" });
+        }           
     }
     render() {
             return <tr>
                 <td>{this.state.id}</td>
-                <td><input placeholder="Name" value={this.state.name} onChange={this.onNameChange} /></td>
-                <td><input placeholder="Year" value={this.state.year} onChange={this.onYearChange} /></td>
-                <td><input placeholder="Genre" value={this.state.genre} onChange={this.onGenreChange} /></td>
-                <td><input placeholder="Author" value={this.state.author} onChange={this.onAuthorChange} /></td>
+                <td><input ref={this.name} placeholder="Name" type="text" defaultValue={this.props.initial?.name || ""} /></td>
+                <td><input ref={this.year} placeholder="Year" type="number" defaultValue={this.props.initial?.year || 0} /></td>
+                <td><input ref={this.genre} placeholder="Genre" type="text" defaultValue={this.props.initial?.genre || ""} /></td>
+                <td><input ref={this.author} placeholder="Author" type="text" defaultValue={this.props.initial?.author || ""} /></td>
                 <td>
                     <button type="button" className="btn btn-light" onClick={this.onSubmit}>{BookFormMode[this.props.mode]}</button>
                     {this.props.mode == BookFormMode.Update &&

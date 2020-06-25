@@ -7,11 +7,12 @@ var AuthMethod;
 export default class AuthComponent extends React.Component {
     constructor(props) {
         super(props);
-        this.state = { method: AuthMethod.Login, login: "", password: "", loginValid: false, passValid: false };
+        this.login = React.createRef();
+        this.password = React.createRef();
+        this.state = { method: AuthMethod.Login, errorText: "" };
         this.onLogin = this.onLogin.bind(this);
+        this.onLogout = this.onLogout.bind(this);
         this.onRegister = this.onRegister.bind(this);
-        this.onLoginChange = this.onLoginChange.bind(this);
-        this.onPasswordChange = this.onPasswordChange.bind(this);
     }
     validateLogin(login) {
         return login.length >= 2;
@@ -20,73 +21,77 @@ export default class AuthComponent extends React.Component {
         return pass.length > 6;
     }
     onLogin() {
-        if (!this.state.loginValid || !this.state.passValid)
+        let loginV = this.login.current.value;
+        let passV = this.password.current.value;
+        if (!this.validateLogin(loginV) || !this.validatePassword(passV))
             return;
-        let login = this.state.login;
-        let password = this.state.password;
         fetch(this.props.authApi + "/" + AuthMethod[this.state.method], {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify([login, password])
+            body: JSON.stringify([loginV, passV])
         })
             .then(response => response.json())
             .then(data => {
             if (data.access_token) {
                 localStorage.setItem('username', data.username);
                 localStorage.setItem('token', data.access_token);
+                this.setState({ errorText: "" });
             }
-            this.setState({});
+            else {
+                this.setState({ errorText: data.errorText });
+            }
             this.props.onAuth();
         });
+    }
+    onLogout() {
+        localStorage.removeItem('token');
+        this.setState({});
+        this.props.onAuth();
     }
     onRegister() {
-        let login = this.state.login;
-        let password = this.state.password;
+        let loginV = this.login.current.value;
+        let passV = this.password.current.value;
+        if (!this.validateLogin(loginV) || !this.validatePassword(passV))
+            return;
         fetch(this.props.authApi + "/" + AuthMethod[this.state.method], {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify([login, password])
+            body: JSON.stringify([loginV, passV])
         })
             .then(response => response.json())
             .then(data => {
             if (data.access_token) {
                 localStorage.setItem('username', data.username);
                 localStorage.setItem('token', data.access_token);
+                this.setState({ errorText: "" });
             }
-            this.setState({});
+            else {
+                this.setState({ errorText: data.errorText });
+            }
             this.props.onAuth();
         });
-    }
-    onLoginChange(e) {
-        let val = e.target.value;
-        let valid = this.validateLogin(val);
-        this.setState({ login: val, loginValid: valid });
-    }
-    onPasswordChange(e) {
-        let val = e.target.value;
-        let valid = this.validatePassword(val);
-        this.setState({ password: val, passValid: valid });
     }
     render() {
         let method = this.state.method;
         let reverseMethod = method == AuthMethod.Login ? AuthMethod.Register : AuthMethod.Login;
-        var loginColor = this.state.loginValid === true ? "green" : "red";
-        var passColor = this.state.passValid === true ? "green" : "red";
+        var loginColor = this.validateLogin(this.login.current.value) === true ? "green" : "red";
+        var passColor = this.validatePassword(this.password.current.value) === true ? "green" : "red";
         let token = localStorage.getItem('token');
         if (!token || isExpired(token)) {
             return React.createElement("form", null,
                 React.createElement("p", null,
                     React.createElement("label", null, "Login:"),
                     React.createElement("br", null),
-                    React.createElement("input", { type: "text", value: this.state.login, onChange: this.onLoginChange, style: { borderColor: loginColor } })),
+                    React.createElement("input", { type: "text", ref: this.login, style: { borderColor: loginColor } })),
                 React.createElement("p", null,
                     React.createElement("label", null, "Password:"),
                     React.createElement("br", null),
-                    React.createElement("input", { type: "password", value: this.state.password, onChange: this.onPasswordChange, style: { borderColor: passColor } })),
+                    React.createElement("input", { type: "password", ref: this.password, style: { borderColor: passColor } })),
+                React.createElement("p", null, this.state.errorText),
                 React.createElement("button", { type: "button", className: "btn btn-light", onClick: e => method == AuthMethod.Login ? this.onLogin() : this.onRegister() }, method == AuthMethod.Login ? "Login" : "Register"),
                 React.createElement("button", { type: "button", className: "btn btn-light", onClick: e => this.setState({ method: reverseMethod }) },
                     " ",
@@ -94,7 +99,8 @@ export default class AuthComponent extends React.Component {
         }
         return React.createElement("p", null,
             "You are logged as ",
-            localStorage.getItem('username'));
+            localStorage.getItem('username'),
+            React.createElement("button", { type: "button", className: "btn btn-light", onClick: e => this.onLogout() }, "Logout"));
     }
 }
 export function isExpired(jwt) {
