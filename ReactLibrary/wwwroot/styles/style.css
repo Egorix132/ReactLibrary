@@ -1,0 +1,10 @@
+﻿.edit-link {
+    font-size: 12px;
+    text-decoration: inherit;  
+}
+
+.edit-link:hover{
+    text-decoration: underline;
+    color: cadetblue;
+    cursor: pointer;
+}
