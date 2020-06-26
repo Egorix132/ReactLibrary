@@ -2,23 +2,23 @@ import * as React from 'react';
 import { BookForm, BookFormMode } from './BookForm.js';
 import BookComponent from './BookComponent.js';
 import AuthComponent from './AuthComponent.js';
-import { isExpired } from './AuthComponent.js';
+import { getToken } from '../tokenApi.js';
 export default class BookList extends React.Component {
     constructor(props) {
         super(props);
         this.state = { Books: [] };
-        this.onChoose = this.onChoose.bind(this);
-        this.onChooseAll = this.onChooseAll.bind(this);
+        this.onSelect = this.onSelect.bind(this);
+        this.onSelectAll = this.onSelectAll.bind(this);
         this.onAddBook = this.onAddBook.bind(this);
         this.onUpdateBook = this.onUpdateBook.bind(this);
         this.onRemoveBook = this.onRemoveBook.bind(this);
     }
-    onChoose(e, id) {
-        this.state.Books[this.state.Books.findIndex(b => b.id == id)].choosed = e.currentTarget.checked;
+    onSelect(e, id) {
+        this.state.Books[this.state.Books.findIndex(b => b.id == id)].selected = e.currentTarget.checked;
         this.setState({ Books: this.state.Books });
     }
-    onChooseAll(e) {
-        this.state.Books.forEach(b => b.choosed = e.currentTarget.checked);
+    onSelectAll(e) {
+        this.state.Books.forEach(b => b.selected = e.currentTarget.checked);
         this.setState({ Books: this.state.Books });
     }
     loadData() {
@@ -34,12 +34,11 @@ export default class BookList extends React.Component {
     }
     onAddBook(Book) {
         if (Book) {
-            console.log(typeof (Book.year));
             fetch(this.props.apiUrl, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': 'Bearer ' + localStorage.getItem('token')
+                    'Authorization': 'Bearer ' + getToken()
                 },
                 body: JSON.stringify(Book)
             }).then(function (response) {
@@ -55,7 +54,7 @@ export default class BookList extends React.Component {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': 'Bearer ' + localStorage.getItem('token')
+                    'Authorization': 'Bearer ' + getToken()
                 },
                 body: JSON.stringify(Book)
             }).then(function (response) {
@@ -66,7 +65,7 @@ export default class BookList extends React.Component {
         }
     }
     onRemoveBook() {
-        let bookIds = this.state.Books.filter(b => b.choosed).map(b => b.id);
+        let bookIds = this.state.Books.filter(b => b.selected).map(b => b.id);
         if (bookIds.length > 0) {
             fetch(this.props.apiUrl, {
                 method: 'DELETE',
@@ -83,10 +82,9 @@ export default class BookList extends React.Component {
         }
     }
     render() {
-        let choose = this.onChoose;
+        let select = this.onSelect;
         let update = this.onUpdateBook;
-        let token = localStorage.getItem('token');
-        let logged = token && !isExpired(token);
+        let logged = getToken() ? true : false;
         return React.createElement("div", null,
             React.createElement("div", { className: "container" },
                 React.createElement("h2", null, "Library"),
@@ -103,12 +101,12 @@ export default class BookList extends React.Component {
                             React.createElement("th", null,
                                 React.createElement("div", { className: "form-check" },
                                     React.createElement("label", { className: "form-check-label" },
-                                        React.createElement("input", { type: "checkbox", className: "form-check-input", onChange: this.onChooseAll }),
-                                        "Choose All"))))),
+                                        React.createElement("input", { type: "checkbox", className: "form-check-input", onChange: this.onSelectAll }),
+                                        "Select All"))))),
                     React.createElement("tbody", null,
                         logged && React.createElement(BookForm, { onBookSubmit: this.onAddBook, mode: BookFormMode.Add }),
                         this.state.Books.map(function (book) {
-                            return React.createElement(BookComponent, { key: book.id, book: book, logged: logged, onChoose: choose, onUpdate: update });
+                            return React.createElement(BookComponent, { key: book.id, book: book, logged: logged, onSelect: select, onUpdate: update });
                         })))));
     }
 }

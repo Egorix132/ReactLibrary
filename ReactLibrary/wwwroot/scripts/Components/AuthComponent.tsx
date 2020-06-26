@@ -1,22 +1,6 @@
 ﻿import * as React from 'react';
-import * as ReactRouterDOM from 'react-router-dom';
-import { RouteComponentProps } from 'react-router';
-import { Console } from 'console';
-import { decode } from 'punycode';
+import { getToken, updateTokens } from '../tokenApi';
 
-interface MatchParams {
-    method: string;
-}
-
-interface Props extends RouteComponentProps<MatchParams> {
-}
-
-export interface match<P> {
-    params: P;
-    isExact: boolean;
-    path: string;
-    url: string;
-}
 enum AuthMethod {
     Login,
     Register
@@ -40,9 +24,8 @@ export default class AuthComponent extends React.Component<AuthProps, AuthState>
         super(props);
         this.state = { method: AuthMethod.Login, errorText: "" }
 
-        this.onLogin = this.onLogin.bind(this);
+        this.onSubmit = this.onSubmit.bind(this);
         this.onLogout = this.onLogout.bind(this);
-        this.onRegister = this.onRegister.bind(this);
     }
     validateLogin(login: string) {
         return login.length >= 2;
@@ -50,7 +33,7 @@ export default class AuthComponent extends React.Component<AuthProps, AuthState>
     validatePassword(pass: string) {
         return pass.length > 6;
     }
-    onLogin() {
+    onSubmit() {
         let loginV = this.login.current.value;
         let passV = this.password.current.value;
 
@@ -67,8 +50,7 @@ export default class AuthComponent extends React.Component<AuthProps, AuthState>
             .then(response => response.json())
             .then(data => {
                 if (data.access_token) {
-                    localStorage.setItem('username', data.username);
-                    localStorage.setItem('token', data.access_token);
+                    updateTokens(data);
                     this.setState({ errorText: "" });
                 }
                 else {
@@ -79,59 +61,31 @@ export default class AuthComponent extends React.Component<AuthProps, AuthState>
             });
     }
     onLogout() {
-        localStorage.removeItem('token');
+        localStorage.removeItem('refreshToken');
+        sessionStorage.removeItem('token');
         this.setState({});
         this.props.onAuth();
-    }
-    onRegister() {
-        let loginV = this.login.current.value;
-        let passV = this.password.current.value;
-
-        if (!this.validateLogin(loginV) || !this.validatePassword(passV))
-            return;
-
-        fetch(this.props.authApi + "/" + AuthMethod[this.state.method], {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify([loginV, passV])
-        })
-            .then(response => response.json())
-            .then(data => {
-                if (data.access_token) {
-                    localStorage.setItem('username', data.username);
-                    localStorage.setItem('token', data.access_token);
-                    this.setState({ errorText: "" });
-                }
-                else {
-                    this.setState({ errorText: data.errorText });
-                }
-       
-                this.props.onAuth();
-            });       
     }
 
     render() {
         let method = this.state.method;
         let reverseMethod = method == AuthMethod.Login ? AuthMethod.Register : AuthMethod.Login;
 
-        var loginColor = this.validateLogin(this.login.current.value) === true ? "green" : "red";
-        var passColor = this.validatePassword(this.password.current.value) === true ? "green" : "red";
-        let token = localStorage.getItem('token');
+        var loginColor = this.validateLogin(this.login.current?.value ?? "") === true ? "green" : "red";
+        var passColor = this.validatePassword(this.password.current?.value ?? "") === true ? "green" : "red";
        
-        if (!token || isExpired(token)) {
+        if (!getToken()) {
             return <form>
                 <p>
                     <label>Login:</label><br />
-                    <input type="text" ref={this.login} style={{ borderColor: loginColor }} />
+                    <input type="text" ref={this.login} style={{ borderColor: loginColor }} defaultValue="" />
                 </p>
                 <p>
                     <label>Password:</label><br />
-                    <input type="password" ref={this.password} style={{ borderColor: passColor }} />
+                    <input type="password" ref={this.password} style={{ borderColor: passColor }} defaultValue="" />
                 </p>
                 <p>{this.state.errorText}</p>
-                <button type="button" className="btn btn-light" onClick={e => method == AuthMethod.Login ? this.onLogin() : this.onRegister()}>{method == AuthMethod.Login ? "Login" : "Register"}</button>
+                <button type="button" className="btn btn-light" onClick={e => this.onSubmit()}>{method == AuthMethod.Login ? "Login" : "Register"}</button>
                 <button type="button" className="btn btn-light" onClick={e => this.setState({ method: reverseMethod })} > {"to " + AuthMethod[reverseMethod]}</button>
             </form>
         }
@@ -142,10 +96,3 @@ export default class AuthComponent extends React.Component<AuthProps, AuthState>
     }
 }
 
-export function isExpired(jwt: string): boolean {
-    if (!jwt)
-        return null;
-    const decoded = JSON.parse(atob(jwt.split('.')[1]));
-    let exp = decoded && decoded.exp && decoded.exp * 1000 || null;
-    return Date.now() > exp;
-}

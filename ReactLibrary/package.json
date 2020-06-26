@@ -15,7 +15,9 @@
         "@types/react": "16.9.30",
         "@types/react-dom": "16.9.3",
         "@types/react-router-dom": "5.1.2",
-        "jquery": "^3.5.1"
+        "bootstrap": "^4.5.0",
+        "jquery": "^3.5.1",
+        "popper.js": "^1.16.1"
     },
     "devDependencies": {
         "@babel/core": "^7.10.3",

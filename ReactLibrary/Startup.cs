@@ -12,6 +12,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
 using ReactLibrary.Models;
+using ReactLibrary.Services;
 
 namespace ReactLibrary
 {
@@ -48,6 +49,8 @@ namespace ReactLibrary
             string secondConnection = Configuration.GetConnectionString("SecondConnection");
             services.AddDbContext<BookContext>(options => options.UseSqlServer(connection));
             services.AddDbContext<PersonContext>(options => options.UseSqlServer(secondConnection));
+
+            services.AddSingleton<ITokenService, TokenService>();
 
             services.AddControllers();
         }

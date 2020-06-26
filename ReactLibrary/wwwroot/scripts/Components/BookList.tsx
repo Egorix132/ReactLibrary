@@ -4,7 +4,7 @@ import {BookForm, BookFormMode}  from './BookForm.js';
 import BookComponent from './BookComponent.js';
 import * as ReactRouterDOM from 'react-router-dom';
 import AuthComponent from './AuthComponent.js';
-import { isExpired } from './AuthComponent.js';
+import { getToken } from '../tokenApi.js';
 
 export default class BookList extends React.Component<{ apiUrl: string }, { Books: Book[] }> {
 
@@ -12,18 +12,18 @@ export default class BookList extends React.Component<{ apiUrl: string }, { Book
         super(props);
         this.state = { Books: []};
 
-        this.onChoose = this.onChoose.bind(this);
-        this.onChooseAll = this.onChooseAll.bind(this);
+        this.onSelect = this.onSelect.bind(this);
+        this.onSelectAll = this.onSelectAll.bind(this);
         this.onAddBook = this.onAddBook.bind(this);
         this.onUpdateBook = this.onUpdateBook.bind(this);
         this.onRemoveBook = this.onRemoveBook.bind(this);
     }
-    onChoose(e: React.FormEvent<HTMLInputElement>, id: number) {
-        this.state.Books[this.state.Books.findIndex(b => b.id == id)].choosed = e.currentTarget.checked;
+    onSelect(e: React.FormEvent<HTMLInputElement>, id: number) {
+        this.state.Books[this.state.Books.findIndex(b => b.id == id)].selected = e.currentTarget.checked;
         this.setState({ Books: this.state.Books });
     }
-    onChooseAll(e: React.FormEvent<HTMLInputElement>) {
-        this.state.Books.forEach(b => b.choosed = e.currentTarget.checked);
+    onSelectAll(e: React.FormEvent<HTMLInputElement>) {
+        this.state.Books.forEach(b => b.selected = e.currentTarget.checked);
         this.setState({ Books: this.state.Books });
     }
     loadData() {
@@ -39,12 +39,11 @@ export default class BookList extends React.Component<{ apiUrl: string }, { Book
     }
     onAddBook(Book: Book) {
         if (Book) {
-            console.log(typeof(Book.year));
             fetch(this.props.apiUrl, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': 'Bearer ' + localStorage.getItem('token')
+                    'Authorization': 'Bearer ' + getToken()
                 },
                 body: JSON.stringify(Book)
             }).then(
@@ -62,7 +61,7 @@ export default class BookList extends React.Component<{ apiUrl: string }, { Book
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': 'Bearer ' + localStorage.getItem('token')
+                    'Authorization': 'Bearer ' + getToken()
                 },
                 body: JSON.stringify(Book)
             }).then(
@@ -75,7 +74,7 @@ export default class BookList extends React.Component<{ apiUrl: string }, { Book
         }
     }
     onRemoveBook() {
-        let bookIds = this.state.Books.filter(b => b.choosed).map(b => b.id);
+        let bookIds = this.state.Books.filter(b => b.selected).map(b => b.id);
         if (bookIds.length > 0) {
             fetch(this.props.apiUrl, {
                 method: 'DELETE',
@@ -94,10 +93,9 @@ export default class BookList extends React.Component<{ apiUrl: string }, { Book
         }
     }
     render() {
-        let choose = this.onChoose;
+        let select = this.onSelect;
         let update = this.onUpdateBook;
-        let token = localStorage.getItem('token');
-        let logged = token && !isExpired(token)
+        let logged: boolean = getToken() ? true : false;
         return <div>
             <div className="container">                
                 <h2>Library</h2>
@@ -116,8 +114,8 @@ export default class BookList extends React.Component<{ apiUrl: string }, { Book
                             <th>
                                 <div className="form-check">
                                     <label className="form-check-label">
-                                        <input type="checkbox" className="form-check-input" onChange={this.onChooseAll} />
-                                    Choose All
+                                        <input type="checkbox" className="form-check-input" onChange={this.onSelectAll} />
+                                    Select All
                                 </label>
                                 </div>
                             </th>
@@ -129,7 +127,7 @@ export default class BookList extends React.Component<{ apiUrl: string }, { Book
                         }
                         {                         
                             this.state.Books.map(function (book) {
-                                return <BookComponent key={book.id} book={book} logged={logged} onChoose={choose} onUpdate={update} />
+                                return <BookComponent key={book.id} book={book} logged={logged} onSelect={select} onUpdate={update} />
                             })
                         }
                     </tbody>

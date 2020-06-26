@@ -1,6 +1,5 @@
 ﻿import * as React from 'react';
 import Book from '../Book.js';
-import { isExpired } from './AuthComponent.js';
 
 export enum BookFormMode {
     Add,
@@ -14,7 +13,7 @@ interface BookFormProps {
     canselUpdate?: () => void;
 }
 
-export class BookForm extends React.Component<BookFormProps, Book> {
+export class BookForm extends React.Component<BookFormProps> {
     private name = React.createRef<HTMLInputElement>();
     private year = React.createRef<HTMLInputElement>();
     private genre = React.createRef<HTMLInputElement>();
@@ -22,13 +21,6 @@ export class BookForm extends React.Component<BookFormProps, Book> {
 
     constructor(props) {
         super(props);
-        this.state = {
-            id: this.props.initial?.id || 0,
-            name: this.props.initial?.name || "",
-            year: this.props.initial?.year || 0,
-            genre: this.props.initial?.genre || "",
-            author: this.props.initial?.author || ""
-        };
 
         this.onSubmit = this.onSubmit.bind(this);
     }
@@ -44,7 +36,7 @@ export class BookForm extends React.Component<BookFormProps, Book> {
         }
 
         this.props.onBookSubmit({
-            id: this.state.id,
+            id: this.props.initial?.id || 0,
             name: bookName,
             year: this.year.current.valueAsNumber,
             genre: this.genre.current.value,
@@ -58,7 +50,7 @@ export class BookForm extends React.Component<BookFormProps, Book> {
     }
     render() {
             return <tr>
-                <td>{this.state.id}</td>
+                <td>{this.props.initial?.id || 0}</td>
                 <td><input ref={this.name} placeholder="Name" type="text" defaultValue={this.props.initial?.name || ""} /></td>
                 <td><input ref={this.year} placeholder="Year" type="number" defaultValue={this.props.initial?.year || 0} /></td>
                 <td><input ref={this.genre} placeholder="Genre" type="text" defaultValue={this.props.initial?.genre || ""} /></td>

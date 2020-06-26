@@ -4,6 +4,7 @@
         "target": "ES2015",
         "removeComments": true,
         "sourceMap": true,
+        "moduleResolution": "Node",
         "jsx": "react"
     }
 }

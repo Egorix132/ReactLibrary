@@ -4,5 +4,5 @@
     year: number;
     genre: string
     author: string;
-    choosed?: boolean;
+    selected?: boolean;
 }

@@ -24,7 +24,7 @@ export default class BookComponent extends React.Component {
                 React.createElement("td", null, this.props.book.genre),
                 React.createElement("td", null, this.props.book.author),
                 React.createElement("td", null,
-                    React.createElement("input", { type: "checkbox", onChange: e => this.props.onChoose(e, this.props.book.id), checked: this.props.book.choosed })));
+                    React.createElement("input", { type: "checkbox", onChange: e => this.props.onSelect(e, this.props.book.id), checked: this.props.book.selected })));
         }
     }
 }

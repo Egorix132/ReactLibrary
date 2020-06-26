@@ -1,7 +1,5 @@
 ﻿const path = require("path");
-const HtmlWebpackPlugin = require("html-webpack-plugin");
-const { CleanWebpackPlugin } = require("clean-webpack-plugin");
-const MiniCssExtractPlugin = require("mini-css-extract-plugin");
+const webpack = require("webpack");
 
 module.exports = {
     entry: "./wwwroot/scripts/app.tsx",
@@ -10,9 +8,13 @@ module.exports = {
         filename: "bundle.js",
         publicPath: "/"
     },
-    resolve: {
-        extensions: [".js", ".ts", ".jsx", ".tsx"]
-    },
+    plugins: [
+        new webpack.ProvidePlugin({
+            $: 'jquery',
+            jQuery: 'jquery',
+            Util: 'exports-loader?Util!bootstrap/js/dist/util'
+        })
+    ],
     module: {
         rules: [
             {
@@ -21,8 +23,8 @@ module.exports = {
             },
             {
                 test: /\.css$/,
-                use: [MiniCssExtractPlugin.loader, "css-loader"]
+                use: ['style-loader', 'css-loader']
             }
         ]
-    },
+    }
 };
