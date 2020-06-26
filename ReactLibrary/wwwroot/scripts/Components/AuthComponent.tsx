@@ -45,7 +45,7 @@ export default class AuthComponent extends React.Component<AuthProps, AuthState>
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify([loginV, passV])
+            body: JSON.stringify({ Login: loginV, Password: passV })
         })
             .then(response => response.json())
             .then(data => {
@@ -77,12 +77,16 @@ export default class AuthComponent extends React.Component<AuthProps, AuthState>
         if (!getToken()) {
             return <form>
                 <p>
-                    <label>Login:</label><br />
-                    <input type="text" ref={this.login} style={{ borderColor: loginColor }} defaultValue="" />
+                    <div className="col-xs-2">
+                        <label>Login:</label><br />
+                        <input type="text" className="form-control" ref={this.login} style={{ borderColor: loginColor }} defaultValue="" />
+                    </div>
                 </p>
                 <p>
-                    <label>Password:</label><br />
-                    <input type="password" ref={this.password} style={{ borderColor: passColor }} defaultValue="" />
+                    <div className="col-xs-2">
+                        <label>Password:</label><br />
+                        <input type="password" className="form-control" ref={this.password} style={{ borderColor: passColor }} defaultValue="" />
+                    </div>
                 </p>
                 <p>{this.state.errorText}</p>
                 <button type="button" className="btn btn-light" onClick={e => this.onSubmit()}>{method == AuthMethod.Login ? "Login" : "Register"}</button>

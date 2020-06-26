@@ -4,6 +4,7 @@ import { BookForm, BookFormMode } from './BookForm.js';
 
 interface BookComponentProps {
     book: Book;
+    selected: boolean;
     logged: boolean;
     onSelect: (e, id: number) => void;
     onUpdate: (Book: Book) => void;
@@ -32,7 +33,7 @@ export default class BookComponent extends React.Component<BookComponentProps, {
                 <td>{this.props.book.genre}</td>
                 <td>{this.props.book.author}</td>
                 <td>
-                    <input type="checkbox" onChange={e => this.props.onSelect(e, this.props.book.id)} checked={this.props.book.selected}></input>
+                    <input type="checkbox" onChange={e => this.props.onSelect(e, this.props.book.id)} checked={this.props.selected}></input>
                 </td>
             </tr>;
         }      

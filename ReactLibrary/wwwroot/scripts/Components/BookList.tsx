@@ -2,37 +2,41 @@
 import Book from '../Book.js';
 import {BookForm, BookFormMode}  from './BookForm.js';
 import BookComponent from './BookComponent.js';
-import * as ReactRouterDOM from 'react-router-dom';
 import AuthComponent from './AuthComponent.js';
 import { getToken } from '../tokenApi.js';
+import { strict } from 'assert';
 
-export default class BookList extends React.Component<{ apiUrl: string }, { Books: Book[] }> {
+export default class BookList extends React.Component<{ apiUrl: string }, { Books: Book[], selected: Map<number, boolean> }> {
 
     constructor(props) {
         super(props);
-        this.state = { Books: []};
+        this.state = { Books: [], selected: new Map<number, boolean>() };
 
         this.onSelect = this.onSelect.bind(this);
         this.onSelectAll = this.onSelectAll.bind(this);
         this.onAddBook = this.onAddBook.bind(this);
         this.onUpdateBook = this.onUpdateBook.bind(this);
         this.onRemoveBook = this.onRemoveBook.bind(this);
+        this.updateStateBooks = this.updateStateBooks.bind(this);
     }
     onSelect(e: React.FormEvent<HTMLInputElement>, id: number) {
-        this.state.Books[this.state.Books.findIndex(b => b.id == id)].selected = e.currentTarget.checked;
-        this.setState({ Books: this.state.Books });
+        this.state.selected.set(id, e.currentTarget.checked);
+        this.setState({ selected: this.state.selected });
     }
     onSelectAll(e: React.FormEvent<HTMLInputElement>) {
-        this.state.Books.forEach(b => b.selected = e.currentTarget.checked);
-        this.setState({ Books: this.state.Books });
+        this.state.selected.forEach((v, k) => this.state.selected.set(k, e.currentTarget.checked));
+        this.setState({ selected: this.state.selected });
+    }
+    updateStateBooks(books: Book[]) {
+        books.forEach(b => {
+            this.state.selected.set(b.id, this.state.selected[b.id] ?? false);
+        });
+        this.setState({ Books: books, selected: this.state.selected });
     }
     loadData() {
         fetch(this.props.apiUrl)
             .then(response => response.json())
-            .then(function (data) {
-                let books: Book[] = data;
-                this.setState({ Books: books});
-            }.bind(this));
+            .then(data => this.updateStateBooks(data));
     }
     componentDidMount() {
         this.loadData();
@@ -74,13 +78,13 @@ export default class BookList extends React.Component<{ apiUrl: string }, { Book
         }
     }
     onRemoveBook() {
-        let bookIds = this.state.Books.filter(b => b.selected).map(b => b.id);
+        let bookIds = this.state.Books.filter(b => this.state.selected.get(b.id)).map(b => b.id);
         if (bookIds.length > 0) {
             fetch(this.props.apiUrl, {
                 method: 'DELETE',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': 'Bearer ' + localStorage.getItem('token')
+                    'Authorization': 'Bearer ' + getToken()
                 },
                 body: JSON.stringify(bookIds)
             }).then(
@@ -93,7 +97,8 @@ export default class BookList extends React.Component<{ apiUrl: string }, { Book
         }
     }
     render() {
-        let select = this.onSelect;
+        let selected = this.state.selected;
+        let onSelect = this.onSelect;
         let update = this.onUpdateBook;
         let logged: boolean = getToken() ? true : false;
         return <div>
@@ -127,7 +132,7 @@ export default class BookList extends React.Component<{ apiUrl: string }, { Book
                         }
                         {                         
                             this.state.Books.map(function (book) {
-                                return <BookComponent key={book.id} book={book} logged={logged} onSelect={select} onUpdate={update} />
+                                return <BookComponent key={book.id} book={book} selected={selected.get(book.id)} logged={logged} onSelect={onSelect} onUpdate={update} />
                             })
                         }
                     </tbody>

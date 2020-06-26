@@ -2,7 +2,6 @@
     id: number;
     name: string;
     year: number;
-    genre: string
+    genre: string;
     author: string;
-    selected?: boolean;
 }

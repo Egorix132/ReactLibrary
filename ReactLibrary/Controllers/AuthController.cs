@@ -21,15 +21,15 @@ namespace ReactLibrary.Controllers
         }
 
         [HttpPost("login")]
-        public async Task<ActionResult> Login(string[] loginAndPassword)
+        public async Task<ActionResult> Login(UserCredentials user)
         {
-            var identity = await GetIdentity(loginAndPassword[0], loginAndPassword[1]);
+            var identity = await GetIdentity(user.Login, user.Password);
             if (identity == null)
             {
                 return BadRequest(new { errorText = "Invalid username or password" });
             }
 
-            Person person = await db.Persons.FirstOrDefaultAsync(x => x.Login == loginAndPassword[0] && x.Password == loginAndPassword[1]);
+            Person person = await db.Persons.FirstOrDefaultAsync(x => x.Login == user.Login && x.Password == user.Password);
 
             var encodedJwt = tokenService.CreateJWT(identity);
             var refreshToken = tokenService.CreateRefreshToken();
@@ -49,22 +49,23 @@ namespace ReactLibrary.Controllers
         }
 
         [HttpPost("register")]
-        public async Task<ActionResult> Register(string[] loginAndPassword)
+        public async Task<ActionResult> Register(UserCredentials user)
         {
-            Person person = await db.Persons.FirstOrDefaultAsync(x => x.Login == loginAndPassword[0]);
-            if(person != null)
-                return BadRequest(new { errorText = "User already exist" });
 
-            if (loginAndPassword[0].Length <= 2)
+            if (user.Login.Length <= 2)
                 return BadRequest(new { errorText = "Login must be more than two characters" });
 
-            if(loginAndPassword[1].Length <= 6)
+            if (user.Password.Length <= 6)
                 return BadRequest(new { errorText = "Password must be more than six characters" });
+
+            Person person = await db.Persons.FirstOrDefaultAsync(x => x.Login == user.Login);
+            if (person != null)
+                return BadRequest(new { errorText = "User already exist" });
 
             person = new Person
             {
-                Login = loginAndPassword[0],
-                Password = loginAndPassword[1]
+                Login = user.Login,
+                Password = user.Password
             };
             db.Persons.Add(person);
             await db.SaveChangesAsync();
@@ -85,7 +86,7 @@ namespace ReactLibrary.Controllers
                 username = identity.Name
             };
 
-            return Ok(response);            
+            return Ok(response);
         }
 
         [HttpPost("refresh")]
@@ -138,5 +139,11 @@ namespace ReactLibrary.Controllers
 
             return null;
         }
+    }
+
+    public class UserCredentials
+    {
+        public string Login { get; set; }
+        public string Password { get; set; }
     }
 }

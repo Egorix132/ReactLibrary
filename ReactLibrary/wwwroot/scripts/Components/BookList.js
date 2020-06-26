@@ -6,28 +6,33 @@ import { getToken } from '../tokenApi.js';
 export default class BookList extends React.Component {
     constructor(props) {
         super(props);
-        this.state = { Books: [] };
+        this.state = { Books: [], selected: new Map() };
         this.onSelect = this.onSelect.bind(this);
         this.onSelectAll = this.onSelectAll.bind(this);
         this.onAddBook = this.onAddBook.bind(this);
         this.onUpdateBook = this.onUpdateBook.bind(this);
         this.onRemoveBook = this.onRemoveBook.bind(this);
+        this.updateStateBooks = this.updateStateBooks.bind(this);
     }
     onSelect(e, id) {
-        this.state.Books[this.state.Books.findIndex(b => b.id == id)].selected = e.currentTarget.checked;
-        this.setState({ Books: this.state.Books });
+        this.state.selected.set(id, e.currentTarget.checked);
+        this.setState({ selected: this.state.selected });
     }
     onSelectAll(e) {
-        this.state.Books.forEach(b => b.selected = e.currentTarget.checked);
-        this.setState({ Books: this.state.Books });
+        this.state.selected.forEach((v, k) => this.state.selected.set(k, e.currentTarget.checked));
+        this.setState({ selected: this.state.selected });
+    }
+    updateStateBooks(books) {
+        books.forEach(b => {
+            var _a;
+            this.state.selected.set(b.id, (_a = this.state.selected[b.id]) !== null && _a !== void 0 ? _a : false);
+        });
+        this.setState({ Books: books, selected: this.state.selected });
     }
     loadData() {
         fetch(this.props.apiUrl)
             .then(response => response.json())
-            .then(function (data) {
-            let books = data;
-            this.setState({ Books: books });
-        }.bind(this));
+            .then(data => this.updateStateBooks(data));
     }
     componentDidMount() {
         this.loadData();
@@ -65,13 +70,13 @@ export default class BookList extends React.Component {
         }
     }
     onRemoveBook() {
-        let bookIds = this.state.Books.filter(b => b.selected).map(b => b.id);
+        let bookIds = this.state.Books.filter(b => this.state.selected.get(b.id)).map(b => b.id);
         if (bookIds.length > 0) {
             fetch(this.props.apiUrl, {
                 method: 'DELETE',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': 'Bearer ' + localStorage.getItem('token')
+                    'Authorization': 'Bearer ' + getToken()
                 },
                 body: JSON.stringify(bookIds)
             }).then(function (response) {
@@ -82,7 +87,8 @@ export default class BookList extends React.Component {
         }
     }
     render() {
-        let select = this.onSelect;
+        let selected = this.state.selected;
+        let onSelect = this.onSelect;
         let update = this.onUpdateBook;
         let logged = getToken() ? true : false;
         return React.createElement("div", null,
@@ -106,7 +112,7 @@ export default class BookList extends React.Component {
                     React.createElement("tbody", null,
                         logged && React.createElement(BookForm, { onBookSubmit: this.onAddBook, mode: BookFormMode.Add }),
                         this.state.Books.map(function (book) {
-                            return React.createElement(BookComponent, { key: book.id, book: book, logged: logged, onSelect: select, onUpdate: update });
+                            return React.createElement(BookComponent, { key: book.id, book: book, selected: selected.get(book.id), logged: logged, onSelect: onSelect, onUpdate: update });
                         })))));
     }
 }

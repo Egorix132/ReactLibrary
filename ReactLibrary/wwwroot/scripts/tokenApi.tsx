@@ -5,6 +5,9 @@ export function getToken(): string{
     if (!token || isExpired(token)) {
         let refreshToken = localStorage.getItem('refreshToken');
 
+        if (!refreshToken)
+            return null;
+
         fetch("/auth/refresh", {
             method: 'POST',
             headers: {

@@ -29,7 +29,7 @@ export class BookForm extends React.Component<BookFormProps> {
         e.preventDefault();
 
         let bookName = this.name.current.value.trim();
-        let bookAuthor = this.name.current.value;
+        let bookAuthor = this.author.current.value;
 
         if (!bookName || !bookAuthor) {
             return;
@@ -45,7 +45,11 @@ export class BookForm extends React.Component<BookFormProps> {
         if (this.props.mode == BookFormMode.Update)
             this.props.canselUpdate();
         else {
-            this.setState({ name: "", year: 0, genre: "", author: "" });
+            this.name.current.value = "";
+            this.year.current.valueAsNumber = 0;
+            this.genre.current.value = "";
+            this.author.current.value = "";
+            this.setState({});
         }           
     }
     render() {

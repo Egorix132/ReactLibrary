@@ -30,7 +30,7 @@ export default class AuthComponent extends React.Component {
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify([loginV, passV])
+            body: JSON.stringify({ Login: loginV, Password: passV })
         })
             .then(response => response.json())
             .then(data => {
@@ -59,13 +59,15 @@ export default class AuthComponent extends React.Component {
         if (!getToken()) {
             return React.createElement("form", null,
                 React.createElement("p", null,
-                    React.createElement("label", null, "Login:"),
-                    React.createElement("br", null),
-                    React.createElement("input", { type: "text", ref: this.login, style: { borderColor: loginColor }, defaultValue: "" })),
+                    React.createElement("div", { className: "col-xs-2" },
+                        React.createElement("label", null, "Login:"),
+                        React.createElement("br", null),
+                        React.createElement("input", { type: "text", className: "form-control", ref: this.login, style: { borderColor: loginColor }, defaultValue: "" }))),
                 React.createElement("p", null,
-                    React.createElement("label", null, "Password:"),
-                    React.createElement("br", null),
-                    React.createElement("input", { type: "password", ref: this.password, style: { borderColor: passColor }, defaultValue: "" })),
+                    React.createElement("div", { className: "col-xs-2" },
+                        React.createElement("label", null, "Password:"),
+                        React.createElement("br", null),
+                        React.createElement("input", { type: "password", className: "form-control", ref: this.password, style: { borderColor: passColor }, defaultValue: "" }))),
                 React.createElement("p", null, this.state.errorText),
                 React.createElement("button", { type: "button", className: "btn btn-light", onClick: e => this.onSubmit() }, method == AuthMethod.Login ? "Login" : "Register"),
                 React.createElement("button", { type: "button", className: "btn btn-light", onClick: e => this.setState({ method: reverseMethod }) },
