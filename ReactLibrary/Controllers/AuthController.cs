@@ -23,13 +23,12 @@ namespace ReactLibrary.Controllers
         [HttpPost("login")]
         public async Task<ActionResult> Login(UserCredentials user)
         {
-            var identity = await GetIdentity(user.Login, user.Password);
-            if (identity == null)
+            Person person = await db.Persons.FirstOrDefaultAsync(x => x.Login == user.Login && x.Password == user.Password);
+            if (person == null)
             {
                 return BadRequest(new { errorText = "Invalid username or password" });
             }
-
-            Person person = await db.Persons.FirstOrDefaultAsync(x => x.Login == user.Login && x.Password == user.Password);
+            var identity = GetIdentity(person);        
 
             var encodedJwt = tokenService.CreateJWT(identity);
             var refreshToken = tokenService.CreateRefreshToken();
@@ -51,7 +50,6 @@ namespace ReactLibrary.Controllers
         [HttpPost("register")]
         public async Task<ActionResult> Register(UserCredentials user)
         {
-
             if (user.Login.Length <= 2)
                 return BadRequest(new { errorText = "Login must be more than two characters" });
 
@@ -70,7 +68,7 @@ namespace ReactLibrary.Controllers
             db.Persons.Add(person);
             await db.SaveChangesAsync();
 
-            ClaimsIdentity identity = await GetIdentity(person.Login, person.Password);
+            ClaimsIdentity identity = GetIdentity(person);
 
             var encodedJwt = tokenService.CreateJWT(identity);
             var refreshToken = tokenService.CreateRefreshToken();
@@ -103,7 +101,7 @@ namespace ReactLibrary.Controllers
                 return BadRequest(new { errorText = "Incorrect token" });
             }
 
-            ClaimsIdentity identity = await GetIdentity(person.Login, person.Password);
+            ClaimsIdentity identity = GetIdentity(person);
 
             var encodedJwt = tokenService.CreateJWT(identity);
             var refreshToken = tokenService.CreateRefreshToken();
@@ -122,22 +120,19 @@ namespace ReactLibrary.Controllers
             return Ok(response);
         }
 
-        private async Task<ClaimsIdentity> GetIdentity(string username, string password)
+        private ClaimsIdentity GetIdentity(Person person)
         {
-            Person person = await db.Persons.FirstOrDefaultAsync(x => x.Login == username && x.Password == password);
-            if (person != null)
-            {
-                var claims = new List<Claim>
-                {
-                    new Claim(ClaimsIdentity.DefaultNameClaimType, person.Login),
-                };
-                ClaimsIdentity claimsIdentity =
-                new ClaimsIdentity(claims, "Token", ClaimsIdentity.DefaultNameClaimType,
-                    ClaimsIdentity.DefaultRoleClaimType);
-                return claimsIdentity;
-            }
+            if (person == null)
+                return null;
 
-            return null;
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimsIdentity.DefaultNameClaimType, person.Login),
+            };
+            ClaimsIdentity claimsIdentity =
+            new ClaimsIdentity(claims, "Token", ClaimsIdentity.DefaultNameClaimType,
+                ClaimsIdentity.DefaultRoleClaimType);
+            return claimsIdentity;
         }
     }
 
