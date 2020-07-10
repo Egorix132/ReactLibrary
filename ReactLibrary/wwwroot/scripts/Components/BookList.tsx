@@ -4,30 +4,36 @@ import {BookForm, BookFormMode}  from './BookForm.js';
 import BookComponent from './BookComponent.js';
 import AuthComponent from './AuthComponent.js';
 import { getToken } from '../tokenApi.js';
-import { strict } from 'assert';
 
-export default class BookList extends React.Component<{ apiUrl: string }, { Books: Book[], selected: Map<number, boolean> }> {
+interface BookListState {
+    Books: Book[];
+    selected: Map<number, boolean>;
+    logged: Boolean;
+}
+
+export default class BookList extends React.Component<{ apiUrl: string }, BookListState> {
 
     constructor(props) {
         super(props);
-        this.state = { Books: [], selected: new Map<number, boolean>() };
+        this.state = { Books: [], selected: new Map<number, boolean>(), logged: getToken() ? true : false };
 
         this.onSelect = this.onSelect.bind(this);
         this.onSelectAll = this.onSelectAll.bind(this);
-        this.onAddBook = this.onAddBook.bind(this);
-        this.onUpdateBook = this.onUpdateBook.bind(this);
-        this.onRemoveBook = this.onRemoveBook.bind(this);
-        this.updateStateBooks = this.updateStateBooks.bind(this);
+        this.onAdd = this.onAdd.bind(this);
+        this.onUpdate = this.onUpdate.bind(this);
+        this.onRemove = this.onRemove.bind(this);
+        this.updateBooks = this.updateBooks.bind(this);
     }
     onSelect(e: React.FormEvent<HTMLInputElement>, id: number) {
-        this.state.selected.set(id, e.currentTarget.checked);
-        this.setState({ selected: this.state.selected });
+        this.setState(prevState => ({
+            selected: prevState.selected.set(id, e.currentTarget.checked)
+        }));
     }
     onSelectAll(e: React.FormEvent<HTMLInputElement>) {
         this.state.selected.forEach((v, k) => this.state.selected.set(k, e.currentTarget.checked));
         this.setState({ selected: this.state.selected });
     }
-    updateStateBooks(books: Book[]) {
+    updateBooks(books: Book[]) {
         books.forEach(b => {
             this.state.selected.set(b.id, this.state.selected[b.id] ?? false);
         });
@@ -36,12 +42,12 @@ export default class BookList extends React.Component<{ apiUrl: string }, { Book
     loadData() {
         fetch(this.props.apiUrl)
             .then(response => response.json())
-            .then(data => this.updateStateBooks(data));
+            .then(data => this.updateBooks(data));
     }
     componentDidMount() {
         this.loadData();
     }
-    onAddBook(Book: Book) {
+    onAdd(Book: Book) {
         if (Book) {
             fetch(this.props.apiUrl, {
                 method: 'POST',
@@ -59,7 +65,7 @@ export default class BookList extends React.Component<{ apiUrl: string }, { Book
             );
         }
     }
-    onUpdateBook(Book: Book) {
+    onUpdate(Book: Book) {
         if (Book) {
             fetch(this.props.apiUrl, {
                 method: 'PUT',
@@ -77,7 +83,7 @@ export default class BookList extends React.Component<{ apiUrl: string }, { Book
             );
         }
     }
-    onRemoveBook() {
+    onRemove() {
         let bookIds = this.state.Books.filter(b => this.state.selected.get(b.id)).map(b => b.id);
         if (bookIds.length > 0) {
             fetch(this.props.apiUrl, {
@@ -97,16 +103,12 @@ export default class BookList extends React.Component<{ apiUrl: string }, { Book
         }
     }
     render() {
-        let selected = this.state.selected;
-        let onSelect = this.onSelect;
-        let update = this.onUpdateBook;
-        let logged: boolean = getToken() ? true : false;
         return <div>
             <div className="container">                
                 <h2>Library</h2>
                 <AuthComponent authApi="/auth" onAuth={() => this.setState({})} />
                 {
-                    logged && <button type="button" className="btn btn-light" onClick={this.onRemoveBook}>Delete selected</button>
+                    this.state.logged && <button type="button" className="btn btn-light" onClick={this.onRemove}>Delete selected</button>
                 }
                 <table className="table">
                     <thead>
@@ -128,11 +130,17 @@ export default class BookList extends React.Component<{ apiUrl: string }, { Book
                     </thead>
                     <tbody>
                         {
-                            logged && <BookForm onBookSubmit={this.onAddBook} mode={BookFormMode.Add} />
+                            this.state.logged && <BookForm onBookSubmit={this.onAdd} mode={BookFormMode.Add} />
                         }
                         {                         
                             this.state.Books.map(function (book) {
-                                return <BookComponent key={book.id} book={book} selected={selected.get(book.id)} logged={logged} onSelect={onSelect} onUpdate={update} />
+                                return <BookComponent
+                                    key={book.id}
+                                    book={book}
+                                    selected={this.state.selected.get(book.id)}
+                                    logged={this.state.logged}
+                                    onSelect={this.onSelect}
+                                    onUpdate={this.onUpdate} />
                             })
                         }
                     </tbody>
